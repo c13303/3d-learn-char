@@ -152,6 +152,7 @@ func _build_tweak_ui() -> void:
 	_add_shader_slider(list, decor_material, "hatch_width_px", "width", 1.0, 8.0, 1.0)
 
 	_add_section(list, "Outline")
+	_add_shader_color_picker(list, outline_material, "outline_color", "color")
 	_add_shader_slider(list, outline_material, "outline_width_px", "width", 1.0, 4.0, 1.0)
 	_add_shader_slider(list, outline_material, "coverage_threshold", "coverage", 0.001, 0.02, 0.0001)
 
@@ -222,6 +223,7 @@ func _tweak_parameters_for_section(section: String) -> Array[StringName]:
 			]
 		"outline":
 			return [
+				&"outline_color",
 				&"outline_width_px",
 				&"coverage_threshold",
 			]
