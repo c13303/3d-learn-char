@@ -2,41 +2,95 @@
 
 [ext_resource type="PackedScene" uid="uid://baraffblmfjwk" path="res://character/stickman.tscn" id="1_ig7tw"]
 [ext_resource type="Script" uid="uid://bevv58obfyvvr" path="res://main.gd" id="1_w8eyr"]
+[ext_resource type="Shader" uid="uid://clfxb4nkcjli" path="res://shaders/pink_ink_toon.gdshader" id="3_pinkink"]
+[ext_resource type="Shader" uid="uid://ctytiig6l5kog" path="res://shaders/screen_mask_outline.gdshader" id="4_screen_outline"]
+[ext_resource type="Shader" uid="uid://c2ble8u0jroe8" path="res://shaders/floor_light_circle.gdshader" id="5_floor_light"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0xm2m"]
-sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
-ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_screen_outline"]
+shader = ExtResource("4_screen_outline")
+shader_parameter/outline_color = Color(0, 0, 0, 1)
+shader_parameter/outline_width_px = 1.0
+shader_parameter/viewport_size = Vector2(800, 450)
+shader_parameter/coverage_threshold = 0.02
 
-[sub_resource type="Sky" id="Sky_h2yge"]
-sky_material = SubResource("ProceduralSkyMaterial_0xm2m")
-
-[sub_resource type="Environment" id="Environment_1bvp3"]
-background_mode = 2
-sky = SubResource("Sky_h2yge")
-tonemap_mode = 2
+[sub_resource type="ViewportTexture" id="ViewportTexture_outline_mask"]
+viewport_path = NodePath("OutlineViewport")
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_0xm2m"]
 size = Vector2(100, 100)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h2yge"]
-albedo_color = Color(0.23947686, 2.274178e-06, 0.16382441, 1)
+[sub_resource type="ShaderMaterial" id="StandardMaterial3D_h2yge"]
+render_priority = 0
+shader = ExtResource("5_floor_light")
+shader_parameter/light_center = Vector3(0, 0, 0)
+shader_parameter/light_color = Color(1, 1, 1, 1)
+shader_parameter/ambient_color = Color(0.16, 0, 0.12, 1)
+shader_parameter/ink_color = Color(0, 0, 0, 1)
+shader_parameter/light_radius = 3.2
+shader_parameter/shade_radius = 6.5
+shader_parameter/hatch_spacing_px = 2.0
+shader_parameter/hatch_width_px = 1.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_1bvp3"]
+size = Vector3(10, 10, 10)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7mycd"]
+render_priority = 0
+shader = ExtResource("3_pinkink")
+shader_parameter/base_color = Color(1, 0.45, 1, 1)
+shader_parameter/highlight_color = Color(1, 1, 1, 1)
+shader_parameter/ink_color = Color(0, 0, 0, 1)
+shader_parameter/highlight_threshold = 0.82
+shader_parameter/hatch_threshold = 0.45
+shader_parameter/black_threshold = 0.18
+shader_parameter/shade_lift = 0.2
+shader_parameter/shadow_strength = 0.97
+shader_parameter/hatch_spacing_px = 2.0
+shader_parameter/hatch_width_px = 4.0
 
 [node name="Main" type="Node3D" unique_id=2120182466]
 script = ExtResource("1_w8eyr")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1854930660]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 14.788478, 0)
-shadow_enabled = true
+transform = Transform3D(-1, 0, -8.742278e-08, -8.742278e-08, -4.371139e-08, 1, 0, 1, 4.371139e-08, 0, 8, 0)
+light_energy = 0.03
 directional_shadow_mode = 0
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=34399533]
-environment = SubResource("Environment_1bvp3")
+directional_shadow_max_distance = 47.2
 
 [node name="stickman" parent="." unique_id=1958055589 instance=ExtResource("1_ig7tw")]
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1534544468]
-transform = Transform3D(1, 0, 0, 0, 0.7297209, 0.68374515, 0, -0.68374515, 0.7297209, 0, 15.129904, 12.183517)
+transform = Transform3D(1, 0, 0, 0, 0.7297209, 0.68374515, 0, -0.68374515, 0.7297209, -0.03295517, 17.286928, 17.193037)
+projection = 1
 current = true
+size = 20.0
+
+[node name="OutlineViewport" type="SubViewport" parent="." unique_id=1848433092]
+transparent_bg = true
+size = Vector2i(800, 450)
+render_target_update_mode = 4
+
+[node name="OutlineCamera3D" type="Camera3D" parent="OutlineViewport" unique_id=1248310142]
+transform = Transform3D(1, 0, 0, 0, 0.7297209, 0.68374515, 0, -0.68374515, 0.7297209, 0, 15.129904, 12.183517)
+projection = 1
+cull_mask = 2
+current = true
+size = 20.0
+
+[node name="ScreenOutline" type="CanvasLayer" parent="." unique_id=1871585664]
+layer = 100
+
+[node name="OutlineOverlay" type="TextureRect" parent="ScreenOutline" unique_id=226909438]
+texture_filter = 1
+material = SubResource("ShaderMaterial_screen_outline")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("ViewportTexture_outline_mask")
+expand_mode = 1
 
 [node name="floor3D" type="Node3D" parent="." unique_id=1067228014]
 
@@ -44,3 +98,10 @@ current = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.017707825, 0)
 mesh = SubResource("PlaneMesh_0xm2m")
 surface_material_override/0 = SubResource("StandardMaterial3D_h2yge")
+
+[node name="decor" type="Node3D" parent="." unique_id=365811495]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="decor" unique_id=1713125219]
+transform = Transform3D(-0.46501204, 0, 0.88530433, 0, 1, 0, -0.88530433, 0, -0.46501204, 0, 5.035586, -17.649847)
+mesh = SubResource("BoxMesh_1bvp3")
+surface_material_override/0 = SubResource("ShaderMaterial_7mycd")

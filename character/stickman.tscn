@@ -2,6 +2,7 @@
 
 [ext_resource type="Animation" uid="uid://etbasmprvxpn" path="res://character/animations/idle.res" id="1_u3e5g"]
 [ext_resource type="Animation" uid="uid://cn3yh24qrgge0" path="res://character/animations/walk_place.res" id="2_368xn"]
+[ext_resource type="Shader" path="res://shaders/pink_two_tone.gdshader" id="3_pinkink"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_seg0e"]
 resource_name = "Material.001"
@@ -117,8 +118,14 @@ bind/27/name = &"mixamorig_RightToeBase"
 bind/27/bone = -1
 bind/27/pose = Transform3D(-0.2018001, -0.00020524571, -0.003160014, -0.0031620532, 0.0036806127, 0.20175795, -0.00014749303, 0.20179121, -0.0036843095, -0.102172814, -0.062095672, -0.0026526267)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_368xn"]
-albedo_color = Color(1, 0.59607846, 1, 1)
+[sub_resource type="ShaderMaterial" id="StandardMaterial3D_368xn"]
+render_priority = 0
+shader = ExtResource("3_pinkink")
+shader_parameter/light_pink = Color(1, 0.28, 1, 1)
+shader_parameter/dark_pink = Color(0.78, 0.08, 0.62, 1)
+shader_parameter/tone_threshold = 0.61
+shader_parameter/shade_lift = 0.51
+shader_parameter/shadow_strength = 0.0
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_eb6xy"]
 _data = {
@@ -379,6 +386,7 @@ bones/34/rotation = Quaternion(0, 0, 0, 1)
 bones/34/scale = Vector3(1, 1, 1)
 
 [node name="Cube" type="MeshInstance3D" parent="Armature/Skeleton3D" unique_id=1118986910]
+layers = 3
 mesh = SubResource("ArrayMesh_6d32i")
 skin = SubResource("Skin_50xra")
 surface_material_override/0 = SubResource("StandardMaterial3D_368xn")
