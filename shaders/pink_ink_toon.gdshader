@@ -1,5 +1,4 @@
 shader_type spatial;
-render_mode ambient_light_disabled;
 
 uniform vec4 base_color : source_color = vec4(1.0, 0.45, 1.0, 1.0);
 uniform vec4 highlight_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
