@@ -20,6 +20,7 @@ const TWEAK_SETTINGS_PATH := "res://shader_tweaks.cfg"
 var tweak_ui: CanvasLayer
 var camera_offset := Vector3.ZERO
 var tweak_materials: Dictionary = {}
+var tweak_control_refreshers: Array[Callable] = []
 
 
 func _ready() -> void:
@@ -90,6 +91,8 @@ func _sync_outline_camera() -> void:
 
 
 func _build_tweak_ui() -> void:
+	tweak_control_refreshers.clear()
+
 	var character_material := character_mesh.get_surface_override_material(0) as ShaderMaterial
 	var floor_material := floor_mesh.get_surface_override_material(0) as ShaderMaterial
 	var decor_material := decor_mesh.get_surface_override_material(0) as ShaderMaterial
@@ -123,6 +126,7 @@ func _build_tweak_ui() -> void:
 	scroll.add_child(list)
 
 	_add_title(list, "Shader Tweaks  (Tab)")
+	_add_tweak_buttons(list)
 
 	_add_section(list, "Character")
 	_add_shader_color_picker(list, character_material, "light_pink", "light")
@@ -200,6 +204,12 @@ func _save_tweak_settings() -> void:
 		push_warning("Could not save shader tweaks to %s. Error: %s" % [TWEAK_SETTINGS_PATH, err])
 
 
+func _restore_tweak_settings() -> void:
+	_load_tweak_settings()
+	for refresh: Callable in tweak_control_refreshers:
+		refresh.call()
+
+
 func _tweak_parameters_for_section(section: String) -> Array[StringName]:
 	match section:
 		"character":
@@ -245,6 +255,26 @@ func _add_section(parent: VBoxContainer, text: String) -> void:
 	parent.add_child(label)
 
 
+func _add_tweak_buttons(parent: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	parent.add_child(row)
+
+	var save_button := Button.new()
+	save_button.text = "Save"
+	save_button.custom_minimum_size = Vector2(92.0, 0.0)
+	save_button.add_theme_font_size_override("font_size", 9)
+	row.add_child(save_button)
+
+	var restore_button := Button.new()
+	restore_button.text = "Restore"
+	restore_button.custom_minimum_size = Vector2(92.0, 0.0)
+	restore_button.add_theme_font_size_override("font_size", 9)
+	row.add_child(restore_button)
+
+	save_button.pressed.connect(_save_tweak_settings)
+	restore_button.pressed.connect(_restore_tweak_settings)
+
+
 func _add_shader_slider(
 	parent: VBoxContainer,
 	material: ShaderMaterial,
@@ -273,11 +303,16 @@ func _add_shader_slider(
 	var update_label := func(value: float) -> void:
 		label.text = "%s %.4f" % [label_text, value]
 
-	update_label.call(slider.value)
+	var refresh := func() -> void:
+		slider.set_value_no_signal(float(material.get_shader_parameter(parameter)))
+		update_label.call(slider.value)
+
+	refresh.call()
+	tweak_control_refreshers.append(refresh)
+
 	slider.value_changed.connect(func(value: float) -> void:
 		material.set_shader_parameter(parameter, value)
 		update_label.call(value)
-		_save_tweak_settings()
 	)
 
 
@@ -298,12 +333,16 @@ func _add_shader_color_picker(
 
 	var picker := ColorPickerButton.new()
 	picker.custom_minimum_size = Vector2(112.0, 0.0)
-	picker.color = material.get_shader_parameter(parameter)
 	row.add_child(picker)
+
+	var refresh := func() -> void:
+		picker.color = material.get_shader_parameter(parameter)
+
+	refresh.call()
+	tweak_control_refreshers.append(refresh)
 
 	picker.color_changed.connect(func(color: Color) -> void:
 		material.set_shader_parameter(parameter, color)
 		if parameter == &"base_color":
 			material.set_shader_parameter("highlight_color", color)
-		_save_tweak_settings()
 	)
