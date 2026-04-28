@@ -118,6 +118,7 @@ bind/27/bone = -1
 bind/27/pose = Transform3D(-0.2018001, -0.00020524571, -0.003160014, -0.0031620532, 0.0036806127, 0.20175795, -0.00014749303, 0.20179121, -0.0036843095, -0.102172814, -0.062095672, -0.0026526267)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_368xn"]
+albedo_color = Color(1, 0.59607846, 1, 1)
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_eb6xy"]
 _data = {

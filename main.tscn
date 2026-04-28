@@ -3,8 +3,34 @@
 [ext_resource type="PackedScene" uid="uid://baraffblmfjwk" path="res://character/stickman.tscn" id="1_ig7tw"]
 [ext_resource type="Script" uid="uid://bevv58obfyvvr" path="res://main.gd" id="1_w8eyr"]
 
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0xm2m"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_h2yge"]
+sky_material = SubResource("ProceduralSkyMaterial_0xm2m")
+
+[sub_resource type="Environment" id="Environment_1bvp3"]
+background_mode = 2
+sky = SubResource("Sky_h2yge")
+tonemap_mode = 2
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_0xm2m"]
+size = Vector2(100, 100)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h2yge"]
+albedo_color = Color(0.23947686, 2.274178e-06, 0.16382441, 1)
+
 [node name="Main" type="Node3D" unique_id=2120182466]
 script = ExtResource("1_w8eyr")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1854930660]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 14.788478, 0)
+shadow_enabled = true
+directional_shadow_mode = 0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=34399533]
+environment = SubResource("Environment_1bvp3")
 
 [node name="stickman" parent="." unique_id=1958055589 instance=ExtResource("1_ig7tw")]
 
@@ -12,7 +38,9 @@ script = ExtResource("1_w8eyr")
 transform = Transform3D(1, 0, 0, 0, 0.7297209, 0.68374515, 0, -0.68374515, 0.7297209, 0, 15.129904, 12.183517)
 current = true
 
-[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=2105685343]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 34.26792, 23.238464)
-light_energy = 4.0
-omni_range = 80.0
+[node name="floor3D" type="Node3D" parent="." unique_id=1067228014]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="floor3D" unique_id=1388206240]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.017707825, 0)
+mesh = SubResource("PlaneMesh_0xm2m")
+surface_material_override/0 = SubResource("StandardMaterial3D_h2yge")
