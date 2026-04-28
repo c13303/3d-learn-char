@@ -67,6 +67,11 @@ func _play_animation(animation_name: StringName) -> void:
 		animation_player.play(animation_name, animation_blend_time)
 
 
+func _update_floor_light_center() -> void:
+	var floor_material := floor_mesh.get_surface_override_material(0) as ShaderMaterial
+	floor_material.set_shader_parameter("light_center", character.global_position)
+
+
 func _sync_outline_camera() -> void:
 	outline_camera.global_transform = main_camera.global_transform
 	outline_camera.projection = main_camera.projection
@@ -74,11 +79,6 @@ func _sync_outline_camera() -> void:
 	outline_camera.fov = main_camera.fov
 	outline_camera.near = main_camera.near
 	outline_camera.far = main_camera.far
-
-
-func _update_floor_light_center() -> void:
-	var floor_material := floor_mesh.get_surface_override_material(0) as ShaderMaterial
-	floor_material.set_shader_parameter("light_center", character.global_position)
 
 
 func _build_tweak_ui() -> void:
@@ -114,7 +114,7 @@ func _build_tweak_ui() -> void:
 	_add_shader_slider(list, floor_material, "hatch_width_px", "width", 1.0, 8.0, 1.0)
 
 	_add_section(list, "Outline")
-	_add_shader_slider(list, outline_material, "outline_width_px", "width", 1.0, 5.0, 1.0)
+	_add_shader_slider(list, outline_material, "outline_width_px", "width", 1.0, 4.0, 1.0)
 	_add_shader_slider(list, outline_material, "coverage_threshold", "coverage", 0.001, 0.02, 0.0001)
 
 

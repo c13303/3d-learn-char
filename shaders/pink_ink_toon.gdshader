@@ -9,8 +9,8 @@ uniform float hatch_threshold : hint_range(0.0, 1.0) = 0.45;
 uniform float black_threshold : hint_range(0.0, 1.0) = 0.18;
 uniform float shade_lift : hint_range(0.0, 1.0) = 0.0;
 uniform float shadow_strength : hint_range(0.0, 1.0) = 1.0;
-uniform float hatch_spacing_px : hint_range(2.0, 12.0) = 4.0;
-uniform float hatch_width_px : hint_range(1.0, 4.0) = 1.0;
+uniform float hatch_spacing_px : hint_range(2.0, 12.0) = 2.0;
+uniform float hatch_width_px : hint_range(1.0, 8.0) = 1.0;
 
 void fragment() {
 	ALBEDO = base_color.rgb;
