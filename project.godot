@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="3D learn char"
 run/main_scene="uid://dyoosf17xphpr"
-config/features=PackedStringArray("4.6", "GL Compatibility")
+config/features=PackedStringArray("4.6")
 config/icon="res://icon.svg"
 
 [display]
@@ -32,5 +32,6 @@ window/stretch/mode="viewport"
 [rendering]
 
 rendering_device/driver.windows="d3d12"
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
+renderer/rendering_method.mobile="forward_plus"
+lights_and_shadows/directional_shadow/size=16384
+lights_and_shadows/directional_shadow/16_bits=false

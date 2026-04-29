@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://rcugx6wq54aj"
-path="res://.godot/imported/Standard Walk.fbx-60597b32c297907cefef9f037a82acbb.scn"
+uid="uid://c0idp18kr5x0s"
+path="res://.godot/imported/Neutral Idle.fbx-b0df296ec3d01bb6d8fade7398af3eb5.scn"
 
 [deps]
 
-source_file="res://assets/originals/Standard Walk.fbx"
-dest_files=["res://.godot/imported/Standard Walk.fbx-60597b32c297907cefef9f037a82acbb.scn"]
+source_file="res://assets/originals/Neutral Idle.fbx"
+dest_files=["res://.godot/imported/Neutral Idle.fbx-b0df296ec3d01bb6d8fade7398af3eb5.scn"]
 
 [params]
 

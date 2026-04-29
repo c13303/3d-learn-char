@@ -4,19 +4,30 @@ extends Node3D
 @export var turn_speed := 10.0
 @export var animation_blend_time := 0.2
 @export var camera_follow_speed := 6.0
+@export var character_scene: PackedScene
+@export var character_shader: Shader = preload("res://shaders/pink_two_tone.gdshader")
+@export var character_light_color := Color(1.0, 0.28, 1.0, 1.0)
+@export var character_dark_color := Color(0.78, 0.08, 0.62, 1.0)
+@export_range(0.0, 1.0, 0.01) var character_tone_threshold := 0.61
+@export_range(0.0, 1.0, 0.01) var character_shade_lift := 0.51
+@export_range(0.0, 1.0, 0.01) var character_shadow_strength := 0.0
+@export var character_outline_enabled := true
 
-@onready var character: Node3D = $stickman
-@onready var animation_player: AnimationPlayer = $stickman/AnimationPlayer
 @onready var main_camera: Camera3D = $Camera3D
 @onready var outline_viewport: SubViewport = $OutlineViewport
 @onready var outline_camera: Camera3D = $OutlineViewport/OutlineCamera3D
-@onready var character_mesh: MeshInstance3D = $stickman/Armature/Skeleton3D/Cube
 @onready var floor_mesh: MeshInstance3D = $floor3D/MeshInstance3D
 @onready var decor_mesh: MeshInstance3D = $decor/MeshInstance3D
 @onready var outline_overlay: TextureRect = $ScreenOutline/OutlineOverlay
 
+const CHARACTER_NODE_NAME := "stickman"
+const OUTLINE_VISUAL_LAYER := 2
 const TWEAK_SETTINGS_PATH := "res://shader_tweaks.cfg"
 
+var character: Node3D
+var animation_player: AnimationPlayer
+var character_mesh: MeshInstance3D
+var character_material: ShaderMaterial
 var tweak_ui: CanvasLayer
 var camera_offset := Vector3.ZERO
 var tweak_materials: Dictionary = {}
@@ -24,6 +35,13 @@ var tweak_control_refreshers: Array[Callable] = []
 
 
 func _ready() -> void:
+	_setup_character()
+	if not _has_character_controller_target():
+		set_process(false)
+		set_physics_process(false)
+		set_process_unhandled_input(false)
+		return
+
 	camera_offset = main_camera.global_position - character.global_position
 	outline_viewport.world_3d = get_viewport().world_3d
 	_sync_outline_camera()
@@ -61,7 +79,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_TAB:
+	if tweak_ui != null and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_TAB:
 		tweak_ui.visible = not tweak_ui.visible
 
 
@@ -71,7 +89,7 @@ func _face_direction(direction: Vector3, delta: float) -> void:
 
 
 func _play_animation(animation_name: StringName) -> void:
-	if animation_player.current_animation != animation_name:
+	if animation_player != null and animation_player.has_animation(animation_name) and animation_player.current_animation != animation_name:
 		animation_player.play(animation_name, animation_blend_time)
 
 
@@ -79,6 +97,95 @@ func _update_camera(delta: float) -> void:
 	var target_position := character.global_position + camera_offset
 	var weight := 1.0 - exp(-camera_follow_speed * delta)
 	main_camera.global_position = main_camera.global_position.lerp(target_position, weight)
+
+
+func _setup_character() -> void:
+	var current_character := get_node_or_null(CHARACTER_NODE_NAME) as Node3D
+
+	if character_scene != null:
+		var scene_path := character_scene.resource_path
+		if current_character == null or current_character.scene_file_path != scene_path:
+			if current_character != null:
+				remove_child(current_character)
+				current_character.queue_free()
+
+			current_character = character_scene.instantiate() as Node3D
+			if current_character != null:
+				current_character.name = CHARACTER_NODE_NAME
+				add_child(current_character)
+
+	character = current_character
+	if character != null:
+		animation_player = character.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		character_mesh = _find_first_mesh_instance(character)
+		_apply_character_shader()
+		_apply_character_outline_layer()
+
+
+func _has_character_controller_target() -> bool:
+	if character == null:
+		push_warning("Main controller disabled: missing character node or character_scene.")
+		return false
+	if not character is Node3D:
+		push_warning("Main controller disabled: selected character scene root is not Node3D.")
+		return false
+	if animation_player == null:
+		push_warning("Main controller disabled: selected character is missing an AnimationPlayer.")
+		return false
+	return true
+
+
+func _find_first_mesh_instance(root: Node) -> MeshInstance3D:
+	if root is MeshInstance3D:
+		return root
+
+	for child: Node in root.get_children():
+		var mesh := _find_first_mesh_instance(child)
+		if mesh != null:
+			return mesh
+
+	return null
+
+
+func _apply_character_shader() -> void:
+	if character_shader == null:
+		return
+
+	character_material = ShaderMaterial.new()
+	character_material.shader = character_shader
+	character_material.set_shader_parameter(&"light_pink", character_light_color)
+	character_material.set_shader_parameter(&"dark_pink", character_dark_color)
+	character_material.set_shader_parameter(&"tone_threshold", character_tone_threshold)
+	character_material.set_shader_parameter(&"shade_lift", character_shade_lift)
+	character_material.set_shader_parameter(&"shadow_strength", character_shadow_strength)
+
+	var meshes: Array[MeshInstance3D] = []
+	_collect_mesh_instances(character, meshes)
+	for mesh_instance: MeshInstance3D in meshes:
+		var surface_count := 1
+		if mesh_instance.mesh != null:
+			surface_count = mesh_instance.mesh.get_surface_count()
+
+		for surface_index: int in range(surface_count):
+			mesh_instance.set_surface_override_material(surface_index, character_material)
+
+
+func _collect_mesh_instances(root: Node, meshes: Array[MeshInstance3D]) -> void:
+	if root is MeshInstance3D:
+		meshes.append(root)
+
+	for child: Node in root.get_children():
+		_collect_mesh_instances(child, meshes)
+
+
+func _apply_character_outline_layer() -> void:
+	var meshes: Array[MeshInstance3D] = []
+	_collect_mesh_instances(character, meshes)
+	for mesh_instance: MeshInstance3D in meshes:
+		if character_outline_enabled:
+			mesh_instance.layers |= OUTLINE_VISUAL_LAYER
+		else:
+			mesh_instance.layers &= ~OUTLINE_VISUAL_LAYER
 
 
 func _sync_outline_camera() -> void:
@@ -93,18 +200,18 @@ func _sync_outline_camera() -> void:
 func _build_tweak_ui() -> void:
 	tweak_control_refreshers.clear()
 
-	var character_material := character_mesh.get_surface_override_material(0) as ShaderMaterial
-	var floor_material := floor_mesh.get_surface_override_material(0) as ShaderMaterial
-	var decor_material := decor_mesh.get_surface_override_material(0) as ShaderMaterial
+	var floor_material := floor_mesh.get_surface_override_material(0) as StandardMaterial3D
+	var decor_material := decor_mesh.get_surface_override_material(0) as StandardMaterial3D
 	var outline_material := outline_overlay.material as ShaderMaterial
 	var had_saved_settings := FileAccess.file_exists(TWEAK_SETTINGS_PATH)
 
 	tweak_materials = {
-		"character": character_material,
 		"floor": floor_material,
 		"decor": decor_material,
 		"outline": outline_material,
 	}
+	if character_material != null:
+		tweak_materials["character"] = character_material
 	_load_tweak_settings()
 
 	tweak_ui = CanvasLayer.new()
@@ -128,37 +235,24 @@ func _build_tweak_ui() -> void:
 	_add_title(list, "Shader Tweaks  (Tab)")
 	_add_tweak_buttons(list)
 
-	_add_section(list, "Character")
-	_add_shader_color_picker(list, character_material, "light_pink", "light")
-	_add_shader_color_picker(list, character_material, "dark_pink", "dark")
-	_add_shader_slider(list, character_material, "tone_threshold", "tone", 0.0, 1.0, 0.01)
-	_add_shader_slider(list, character_material, "shade_lift", "lift", 0.0, 1.0, 0.01)
-	_add_shader_slider(list, character_material, "shadow_strength", "shadow", 0.0, 1.0, 0.01)
+	if tweak_materials.has("character"):
+		_add_section(list, "Character")
+		_add_tweak_color_picker(list, "character", "light_pink", "light")
+		_add_tweak_color_picker(list, "character", "dark_pink", "dark")
+		_add_tweak_slider(list, "character", "tone_threshold", "tone", 0.0, 1.0, 0.01)
+		_add_tweak_slider(list, "character", "shade_lift", "lift", 0.0, 1.0, 0.01)
+		_add_tweak_slider(list, "character", "shadow_strength", "shadow", 0.0, 1.0, 0.01)
 
 	_add_section(list, "Floor")
-	_add_shader_color_picker(list, floor_material, "base_color", "color")
-	_add_shader_color_picker(list, floor_material, "ink_color", "lines")
-	_add_shader_slider(list, floor_material, "hatch_threshold", "hatch", 0.0, 1.0, 0.01)
-	_add_shader_slider(list, floor_material, "black_threshold", "black", 0.0, 1.0, 0.01)
-	_add_shader_slider(list, floor_material, "shade_lift", "lift", 0.0, 1.0, 0.01)
-	_add_shader_slider(list, floor_material, "shadow_strength", "shadow", 0.0, 1.0, 0.01)
-	_add_shader_slider(list, floor_material, "hatch_spacing_px", "spacing", 2.0, 12.0, 1.0)
-	_add_shader_slider(list, floor_material, "hatch_width_px", "width", 1.0, 8.0, 1.0)
+	_add_tweak_color_picker(list, "floor", "base_color", "color")
 
 	_add_section(list, "Decor")
-	_add_shader_color_picker(list, decor_material, "base_color", "color")
-	_add_shader_color_picker(list, decor_material, "ink_color", "lines")
-	_add_shader_slider(list, decor_material, "hatch_threshold", "hatch", 0.0, 1.0, 0.01)
-	_add_shader_slider(list, decor_material, "black_threshold", "black", 0.0, 1.0, 0.01)
-	_add_shader_slider(list, decor_material, "shade_lift", "lift", 0.0, 1.0, 0.01)
-	_add_shader_slider(list, decor_material, "shadow_strength", "shadow", 0.0, 1.0, 0.01)
-	_add_shader_slider(list, decor_material, "hatch_spacing_px", "spacing", 2.0, 12.0, 1.0)
-	_add_shader_slider(list, decor_material, "hatch_width_px", "width", 1.0, 8.0, 1.0)
+	_add_tweak_color_picker(list, "decor", "base_color", "color")
 
 	_add_section(list, "Outline")
-	_add_shader_color_picker(list, outline_material, "outline_color", "color")
-	_add_shader_slider(list, outline_material, "outline_width_px", "width", 1.0, 4.0, 1.0)
-	_add_shader_slider(list, outline_material, "coverage_threshold", "coverage", 0.001, 0.02, 0.0001)
+	_add_tweak_color_picker(list, "outline", "outline_color", "color")
+	_add_tweak_slider(list, "outline", "outline_width_px", "width", 1.0, 4.0, 1.0)
+	_add_tweak_slider(list, "outline", "coverage_threshold", "coverage", 0.001, 0.02, 0.0001)
 
 	if not had_saved_settings:
 		_save_tweak_settings()
@@ -174,8 +268,7 @@ func _load_tweak_settings() -> void:
 		if not config.has_section(section):
 			continue
 
-		var material := tweak_materials[section] as ShaderMaterial
-		if material == null:
+		if not tweak_materials.has(section):
 			continue
 
 		for parameter: StringName in _tweak_parameters_for_section(section):
@@ -183,21 +276,15 @@ func _load_tweak_settings() -> void:
 				continue
 
 			var value: Variant = config.get_value(section, String(parameter))
-			material.set_shader_parameter(parameter, value)
-			if parameter == &"base_color":
-				material.set_shader_parameter(&"highlight_color", value)
+			_set_tweak_value(section, parameter, value)
 
 
 func _save_tweak_settings() -> void:
 	var config := ConfigFile.new()
 
 	for section: String in tweak_materials:
-		var material := tweak_materials[section] as ShaderMaterial
-		if material == null:
-			continue
-
 		for parameter: StringName in _tweak_parameters_for_section(section):
-			config.set_value(section, String(parameter), material.get_shader_parameter(parameter))
+			config.set_value(section, String(parameter), _get_tweak_value(section, parameter))
 
 	var err := config.save(TWEAK_SETTINGS_PATH)
 	if err != OK:
@@ -223,13 +310,6 @@ func _tweak_parameters_for_section(section: String) -> Array[StringName]:
 		"floor", "decor":
 			return [
 				&"base_color",
-				&"ink_color",
-				&"hatch_threshold",
-				&"black_threshold",
-				&"shade_lift",
-				&"shadow_strength",
-				&"hatch_spacing_px",
-				&"hatch_width_px",
 			]
 		"outline":
 			return [
@@ -239,6 +319,34 @@ func _tweak_parameters_for_section(section: String) -> Array[StringName]:
 			]
 
 	return []
+
+
+func _get_tweak_value(section: String, parameter: StringName) -> Variant:
+	match section:
+		"character", "outline":
+			var material := tweak_materials[section] as ShaderMaterial
+			return material.get_shader_parameter(parameter)
+		"floor", "decor":
+			var surface_material := tweak_materials[section] as StandardMaterial3D
+
+			if parameter == &"base_color":
+				return surface_material.albedo_color
+
+	return null
+
+
+func _set_tweak_value(section: String, parameter: StringName, value: Variant) -> void:
+	match section:
+		"character", "outline":
+			var material := tweak_materials[section] as ShaderMaterial
+			material.set_shader_parameter(parameter, value)
+			if parameter == &"base_color":
+				material.set_shader_parameter(&"highlight_color", value)
+		"floor", "decor":
+			var surface_material := tweak_materials[section] as StandardMaterial3D
+
+			if parameter == &"base_color":
+				surface_material.albedo_color = value
 
 
 func _add_title(parent: VBoxContainer, text: String) -> void:
@@ -275,9 +383,9 @@ func _add_tweak_buttons(parent: VBoxContainer) -> void:
 	restore_button.pressed.connect(_restore_tweak_settings)
 
 
-func _add_shader_slider(
+func _add_tweak_slider(
 	parent: VBoxContainer,
-	material: ShaderMaterial,
+	section: String,
 	parameter: StringName,
 	label_text: String,
 	min_value: float,
@@ -297,28 +405,28 @@ func _add_shader_slider(
 	slider.min_value = min_value
 	slider.max_value = max_value
 	slider.step = step
-	slider.value = float(material.get_shader_parameter(parameter))
+	slider.value = float(_get_tweak_value(section, parameter))
 	row.add_child(slider)
 
 	var update_label := func(value: float) -> void:
 		label.text = "%s %.4f" % [label_text, value]
 
 	var refresh := func() -> void:
-		slider.set_value_no_signal(float(material.get_shader_parameter(parameter)))
+		slider.set_value_no_signal(float(_get_tweak_value(section, parameter)))
 		update_label.call(slider.value)
 
 	refresh.call()
 	tweak_control_refreshers.append(refresh)
 
 	slider.value_changed.connect(func(value: float) -> void:
-		material.set_shader_parameter(parameter, value)
+		_set_tweak_value(section, parameter, value)
 		update_label.call(value)
 	)
 
 
-func _add_shader_color_picker(
+func _add_tweak_color_picker(
 	parent: VBoxContainer,
-	material: ShaderMaterial,
+	section: String,
 	parameter: StringName,
 	label_text: String
 ) -> void:
@@ -336,13 +444,11 @@ func _add_shader_color_picker(
 	row.add_child(picker)
 
 	var refresh := func() -> void:
-		picker.color = material.get_shader_parameter(parameter)
+		picker.color = _get_tweak_value(section, parameter)
 
 	refresh.call()
 	tweak_control_refreshers.append(refresh)
 
 	picker.color_changed.connect(func(color: Color) -> void:
-		material.set_shader_parameter(parameter, color)
-		if parameter == &"base_color":
-			material.set_shader_parameter("highlight_color", color)
+		_set_tweak_value(section, parameter, color)
 	)

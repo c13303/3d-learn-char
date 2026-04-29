@@ -1,9 +1,8 @@
 [gd_scene format=3 uid="uid://dyoosf17xphpr"]
 
-[ext_resource type="PackedScene" uid="uid://baraffblmfjwk" path="res://character/stickman.tscn" id="1_ig7tw"]
 [ext_resource type="Script" uid="uid://bevv58obfyvvr" path="res://main.gd" id="1_w8eyr"]
-[ext_resource type="Shader" path="res://shaders/screen_mask_outline.gdshader" id="4_screen_outline"]
-[ext_resource type="Shader" path="res://shaders/pink_ink_toon.gdshader" id="5_env_toon"]
+[ext_resource type="PackedScene" uid="uid://d0mda8my8ohal" path="res://character/y-man.scn" id="2_h2yge"]
+[ext_resource type="Shader" uid="uid://0slurlc8q17x" path="res://shaders/screen_mask_outline.gdshader" id="4_screen_outline"]
 
 [sub_resource type="Environment" id="Environment_unshaded"]
 background_mode = 1
@@ -25,39 +24,18 @@ viewport_path = NodePath("OutlineViewport")
 [sub_resource type="PlaneMesh" id="PlaneMesh_0xm2m"]
 size = Vector2(100, 100)
 
-[sub_resource type="ShaderMaterial" id="StandardMaterial3D_h2yge"]
-render_priority = 0
-shader = ExtResource("5_env_toon")
-shader_parameter/base_color = Color(1, 1, 1, 1)
-shader_parameter/highlight_color = Color(1, 1, 1, 1)
-shader_parameter/ink_color = Color(0, 0, 0, 1)
-shader_parameter/highlight_threshold = 0.82
-shader_parameter/hatch_threshold = 0.45
-shader_parameter/black_threshold = 0.18
-shader_parameter/shade_lift = 0.25
-shader_parameter/shadow_strength = 1.0
-shader_parameter/hatch_spacing_px = 2.0
-shader_parameter/hatch_width_px = 1.0
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h2yge"]
+albedo_color = Color(0.64343846, 0.58555025, 0.58555025, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_1bvp3"]
 size = Vector3(10, 10, 10)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_decor"]
-render_priority = 0
-shader = ExtResource("5_env_toon")
-shader_parameter/base_color = Color(0.7, 0.12, 0.55, 1)
-shader_parameter/highlight_color = Color(0.7, 0.12, 0.55, 1)
-shader_parameter/ink_color = Color(0, 0, 0, 1)
-shader_parameter/highlight_threshold = 0.82
-shader_parameter/hatch_threshold = 0.45
-shader_parameter/black_threshold = 0.18
-shader_parameter/shade_lift = 0.25
-shader_parameter/shadow_strength = 1.0
-shader_parameter/hatch_spacing_px = 2.0
-shader_parameter/hatch_width_px = 1.0
+[sub_resource type="StandardMaterial3D" id="ShaderMaterial_decor"]
+albedo_color = Color(0.43420684, 0.34597963, 0.41095778, 1)
 
 [node name="Main" type="Node3D" unique_id=2120182466]
 script = ExtResource("1_w8eyr")
+character_scene = ExtResource("2_h2yge")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=282526304]
 environment = SubResource("Environment_unshaded")
@@ -66,13 +44,14 @@ environment = SubResource("Environment_unshaded")
 transform = Transform3D(-0.8660254, -0.4330128, 0.25000003, -0.093262, 0.6311182, 0.77005976, -0.4912253, 0.64357585, -0.586948, 0, 8, 0)
 light_energy = 0.6
 shadow_enabled = true
-directional_shadow_mode = 0
-directional_shadow_max_distance = 47.2
-
-[node name="stickman" parent="." unique_id=1958055589 instance=ExtResource("1_ig7tw")]
+shadow_bias = 0.02
+shadow_normal_bias = 0.5
+shadow_blur = 0.15
+directional_shadow_max_distance = 8.0
+directional_shadow_pancake_size = 8.0
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1534544468]
-transform = Transform3D(1, 0, 0, 0, 0.7297209, 0.68374515, 0, -0.68374515, 0.7297209, -0.03295517, 17.286928, 17.193037)
+transform = Transform3D(1, 0, 0, 0, 0.9632095, 0.26875174, 0, -0.26875174, 0.9632095, -0.03295517, 14.065491, 24.189259)
 projection = 1
 current = true
 size = 20.0
@@ -84,8 +63,8 @@ render_target_update_mode = 4
 
 [node name="OutlineCamera3D" type="Camera3D" parent="OutlineViewport" unique_id=1248310142]
 transform = Transform3D(1, 0, 0, 0, 0.7297209, 0.68374515, 0, -0.68374515, 0.7297209, -0.03295517, 17.286928, 17.193037)
-projection = 1
 cull_mask = 2
+projection = 1
 current = true
 size = 20.0
 
