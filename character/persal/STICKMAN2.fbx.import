@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://ccln20r3t43hk"
-path="res://.godot/imported/Hook Punch.fbx-83f158a2678dfaa2871d74b1ab9875bf.scn"
+uid="uid://bdi1smuudxg0b"
+path="res://.godot/imported/STICKMAN2.fbx-6f19ed1dfbaf39ff99ce1482612474f2.scn"
 
 [deps]
 
-source_file="res://assets/originals/Hook Punch.fbx"
-dest_files=["res://.godot/imported/Hook Punch.fbx-83f158a2678dfaa2871d74b1ab9875bf.scn"]
+source_file="res://character/persal/STICKMAN2.fbx"
+dest_files=["res://.godot/imported/STICKMAN2.fbx-6f19ed1dfbaf39ff99ce1482612474f2.scn"]
 
 [params]
 

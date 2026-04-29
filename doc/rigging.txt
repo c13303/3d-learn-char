@@ -1,0 +1,17 @@
+- STICKMAN2.fbx = le model pour mixamo
+
+- Dans Godot, l'ouvrir comme new inherited scene, et immédiatement le save again en .tscn (ou .scn binaire)
+- Ouvrir cette nouvelle scene > right click node parent, clear dependance (ou genre)
+- Sauvegarder cette scene : ça sera la perso
+- Editer les animations : importer les Mixamo ici
+
+pour extraire les mixamo, pareil new inherited scene > animation editor > make unique > save l'animation en .res
+
+- Importer le perso dans Blender. 
+- UV maper chaque element qu'on veut qu'il ait son outline. Genre la tete etc. Exporter UV en png.
+- Generer une texture aussi, dans le blender.
+- Exporter le .glb (il aurait la texture dedans normalement, Material)
+- Importer dans Godot
+
+- Normalement les animations mixamo fonctionnent encore.
+- Réorienter / scaler l'Armature ! 
