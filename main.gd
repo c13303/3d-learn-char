@@ -218,10 +218,10 @@ func _add_outline_id_mask(source: MeshInstance3D, id_color: Color) -> void:
 
 	var material_key := source.name
 	if not outline_id_materials.has(material_key):
-		var id_material := ShaderMaterial.new()
-		id_material.shader = OUTLINE_ID_SHADER
-		id_material.set_shader_parameter(&"id_color", id_color)
-		outline_id_materials[material_key] = id_material
+		var new_id_material := ShaderMaterial.new()
+		new_id_material.shader = OUTLINE_ID_SHADER
+		new_id_material.set_shader_parameter(&"id_color", id_color)
+		outline_id_materials[material_key] = new_id_material
 
 	var id_mask := source.duplicate() as MeshInstance3D
 	if id_mask == null:
