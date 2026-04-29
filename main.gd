@@ -12,6 +12,7 @@ extends Node3D
 @export_range(0.0, 1.0, 0.01) var character_shade_lift := 0.51
 @export_range(0.0, 1.0, 0.01) var character_shadow_strength := 0.0
 @export var character_outline_enabled := true
+@export var outline_id_texture: Texture2D = preload("res://character/persal/RIGGED_STICKMAN2_Material.png")
 
 @onready var main_camera: Camera3D = $Camera3D
 @onready var outline_viewport: SubViewport = $OutlineViewport
@@ -176,7 +177,7 @@ func _apply_character_shader() -> void:
 func _collect_mesh_instances(root: Node, meshes: Array[MeshInstance3D]) -> void:
 	if root is MeshInstance3D:
 		var mesh_instance := root as MeshInstance3D
-		if not mesh_instance.has_meta(&"outline_id_mask"):
+		if not mesh_instance.has_meta(&"outline_mask"):
 			meshes.append(mesh_instance)
 
 	for child: Node in root.get_children():
@@ -194,33 +195,44 @@ func _apply_character_outline_layer() -> void:
 	if not character_outline_enabled:
 		return
 
+	if outline_id_texture != null:
+		for mesh_instance: MeshInstance3D in meshes:
+			_add_outline_id_mask(mesh_instance, Color.WHITE, outline_id_texture)
+		return
+
 	var surface_mesh := character.find_child("Alpha_Surface", true, false) as MeshInstance3D
 	var joints_mesh := character.find_child("Alpha_Joints", true, false) as MeshInstance3D
 	if surface_mesh != null:
 		_add_outline_id_mask(surface_mesh, Color(1.0, 0.0, 0.0, 1.0))
 	if joints_mesh != null:
 		_add_outline_id_mask(joints_mesh, Color(0.0, 1.0, 0.0, 1.0))
+	if surface_mesh == null and joints_mesh == null:
+		for mesh_instance: MeshInstance3D in meshes:
+			_add_outline_id_mask(mesh_instance, Color(1.0, 0.0, 0.0, 1.0))
 
 
 func _clear_outline_id_masks() -> void:
 	if character == null:
 		return
 
-	for node: Node in character.find_children("*", "MeshInstance3D", true, false):
-		if node.has_meta(&"outline_id_mask"):
+	for node: Node in find_children("*", "MeshInstance3D", true, false):
+		if node.has_meta(&"outline_mask"):
 			node.queue_free()
 
 
-func _add_outline_id_mask(source: MeshInstance3D, id_color: Color) -> void:
+func _add_outline_id_mask(source: MeshInstance3D, id_color: Color, id_texture: Texture2D = null) -> void:
 	var parent := source.get_parent()
 	if parent == null:
 		return
 
-	var material_key := source.name
+	var material_key := "%s:%s" % [source.name, id_texture.resource_path if id_texture != null else ""]
 	if not outline_id_materials.has(material_key):
 		var new_id_material := ShaderMaterial.new()
 		new_id_material.shader = OUTLINE_ID_SHADER
 		new_id_material.set_shader_parameter(&"id_color", id_color)
+		new_id_material.set_shader_parameter(&"use_id_texture", id_texture != null)
+		if id_texture != null:
+			new_id_material.set_shader_parameter(&"id_texture", id_texture)
 		outline_id_materials[material_key] = new_id_material
 
 	var id_mask := source.duplicate() as MeshInstance3D
@@ -229,7 +241,7 @@ func _add_outline_id_mask(source: MeshInstance3D, id_color: Color) -> void:
 
 	var id_material := outline_id_materials[material_key] as ShaderMaterial
 	id_mask.name = "%s_OutlineIdMask" % source.name
-	id_mask.set_meta(&"outline_id_mask", true)
+	id_mask.set_meta(&"outline_mask", true)
 	id_mask.layers = OUTLINE_ID_VISUAL_LAYER
 	id_mask.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	id_mask.material_override = id_material

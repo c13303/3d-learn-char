@@ -10,7 +10,8 @@ void fragment() {
 	vec2 center_pixel = floor(UV * viewport_size);
 	vec2 center_uv = (center_pixel + vec2(0.5, 0.5)) / viewport_size;
 	vec4 center_sample = texture(TEXTURE, center_uv);
-	float center = step(coverage_threshold, center_sample.a);
+	float center_occupied = step(coverage_threshold, center_sample.a);
+	float center_id = center_occupied * step(0.05, max(max(center_sample.r, center_sample.g), center_sample.b));
 
 	vec2 right_uv = (center_pixel + vec2(0.5 + sample_width, 0.5)) / viewport_size;
 	vec2 left_uv = (center_pixel + vec2(0.5 - sample_width, 0.5)) / viewport_size;
@@ -22,19 +23,19 @@ void fragment() {
 	vec4 up_sample = texture(TEXTURE, up_uv);
 	vec4 down_sample = texture(TEXTURE, down_uv);
 
-	float right = step(coverage_threshold, right_sample.a);
-	float left = step(coverage_threshold, left_sample.a);
-	float up = step(coverage_threshold, up_sample.a);
-	float down = step(coverage_threshold, down_sample.a);
+	float right = step(coverage_threshold, right_sample.a) * step(0.05, max(max(right_sample.r, right_sample.g), right_sample.b));
+	float left = step(coverage_threshold, left_sample.a) * step(0.05, max(max(left_sample.r, left_sample.g), left_sample.b));
+	float up = step(coverage_threshold, up_sample.a) * step(0.05, max(max(up_sample.r, up_sample.g), up_sample.b));
+	float down = step(coverage_threshold, down_sample.a) * step(0.05, max(max(down_sample.r, down_sample.g), down_sample.b));
 
-	float global_outline = (1.0 - center) * max(max(left, right), max(up, down));
+	float global_outline = (1.0 - center_occupied) * max(max(left, right), max(up, down));
 
 	float right_id_edge = right * step(0.05, distance(center_sample.rgb, right_sample.rgb));
 	float left_id_edge = left * step(0.05, distance(center_sample.rgb, left_sample.rgb));
 	float up_id_edge = up * step(0.05, distance(center_sample.rgb, up_sample.rgb));
 	float down_id_edge = down * step(0.05, distance(center_sample.rgb, down_sample.rgb));
-	float joints_side = step(0.9, center_sample.g) * step(center_sample.r, 0.1);
-	float internal_outline = center * joints_side * max(max(left_id_edge, right_id_edge), max(up_id_edge, down_id_edge));
+	float blue_zone_side = step(0.9, center_sample.b) * step(center_sample.r, 0.1);
+	float internal_outline = center_id * blue_zone_side * max(max(left_id_edge, right_id_edge), max(up_id_edge, down_id_edge));
 
 	float outline = max(global_outline, internal_outline);
 	COLOR = vec4(outline_color.rgb, outline_color.a * outline);
