@@ -21,13 +21,15 @@ extends Node3D
 @onready var outline_overlay: TextureRect = $ScreenOutline/OutlineOverlay
 
 const CHARACTER_NODE_NAME := "stickman"
-const OUTLINE_VISUAL_LAYER := 2
+const OUTLINE_ID_VISUAL_LAYER := 2
 const TWEAK_SETTINGS_PATH := "res://shader_tweaks.cfg"
+const OUTLINE_ID_SHADER := preload("res://shaders/outline_id_mask.gdshader")
 
 var character: Node3D
 var animation_player: AnimationPlayer
 var character_mesh: MeshInstance3D
 var character_material: ShaderMaterial
+var outline_id_materials: Dictionary = {}
 var tweak_ui: CanvasLayer
 var camera_offset := Vector3.ZERO
 var tweak_materials: Dictionary = {}
@@ -43,6 +45,7 @@ func _ready() -> void:
 		return
 
 	camera_offset = main_camera.global_position - character.global_position
+	main_camera.cull_mask &= ~OUTLINE_ID_VISUAL_LAYER
 	outline_viewport.world_3d = get_viewport().world_3d
 	_sync_outline_camera()
 	_build_tweak_ui()
@@ -172,20 +175,70 @@ func _apply_character_shader() -> void:
 
 func _collect_mesh_instances(root: Node, meshes: Array[MeshInstance3D]) -> void:
 	if root is MeshInstance3D:
-		meshes.append(root)
+		var mesh_instance := root as MeshInstance3D
+		if not mesh_instance.has_meta(&"outline_id_mask"):
+			meshes.append(mesh_instance)
 
 	for child: Node in root.get_children():
 		_collect_mesh_instances(child, meshes)
 
 
 func _apply_character_outline_layer() -> void:
+	_clear_outline_id_masks()
+
 	var meshes: Array[MeshInstance3D] = []
 	_collect_mesh_instances(character, meshes)
 	for mesh_instance: MeshInstance3D in meshes:
-		if character_outline_enabled:
-			mesh_instance.layers |= OUTLINE_VISUAL_LAYER
-		else:
-			mesh_instance.layers &= ~OUTLINE_VISUAL_LAYER
+		mesh_instance.layers &= ~OUTLINE_ID_VISUAL_LAYER
+
+	if not character_outline_enabled:
+		return
+
+	var surface_mesh := character.find_child("Alpha_Surface", true, false) as MeshInstance3D
+	var joints_mesh := character.find_child("Alpha_Joints", true, false) as MeshInstance3D
+	if surface_mesh != null:
+		_add_outline_id_mask(surface_mesh, Color(1.0, 0.0, 0.0, 1.0))
+	if joints_mesh != null:
+		_add_outline_id_mask(joints_mesh, Color(0.0, 1.0, 0.0, 1.0))
+
+
+func _clear_outline_id_masks() -> void:
+	if character == null:
+		return
+
+	for node: Node in character.find_children("*", "MeshInstance3D", true, false):
+		if node.has_meta(&"outline_id_mask"):
+			node.queue_free()
+
+
+func _add_outline_id_mask(source: MeshInstance3D, id_color: Color) -> void:
+	var parent := source.get_parent()
+	if parent == null:
+		return
+
+	var material_key := source.name
+	if not outline_id_materials.has(material_key):
+		var id_material := ShaderMaterial.new()
+		id_material.shader = OUTLINE_ID_SHADER
+		id_material.set_shader_parameter(&"id_color", id_color)
+		outline_id_materials[material_key] = id_material
+
+	var id_mask := source.duplicate() as MeshInstance3D
+	if id_mask == null:
+		return
+
+	var id_material := outline_id_materials[material_key] as ShaderMaterial
+	id_mask.name = "%s_OutlineIdMask" % source.name
+	id_mask.set_meta(&"outline_id_mask", true)
+	id_mask.layers = OUTLINE_ID_VISUAL_LAYER
+	id_mask.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	id_mask.material_override = id_material
+
+	if id_mask.mesh != null:
+		for surface_index: int in range(id_mask.mesh.get_surface_count()):
+			id_mask.set_surface_override_material(surface_index, id_material)
+
+	parent.add_child(id_mask)
 
 
 func _sync_outline_camera() -> void:
