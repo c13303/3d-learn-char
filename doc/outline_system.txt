@@ -1,0 +1,168 @@
+Outline System
+==============
+
+Goal
+----
+
+The current outline system draws:
+
+- one outer silhouette outline around the visible character shape
+- internal outlines between painted body zones
+
+The visible character material does not show the ID texture. The ID texture is
+only used by a separate outline mask pass.
+
+
+Main Pieces
+-----------
+
+main.gd
+
+- Instantiates the selected character scene.
+- Applies the visible character shader to the character meshes.
+- Creates duplicate MeshInstance3D nodes for the outline mask pass.
+- Places those duplicates on OUTLINE_ID_VISUAL_LAYER.
+- Hides that layer from the main camera.
+- The outline camera renders only that layer into OutlineViewport.
+
+shaders/outline_id_mask.gdshader
+
+- Spatial shader used by the duplicated outline-mask meshes.
+- It can either output a fixed ID color or sample outline_id_texture using the
+  mesh UVs.
+- It intentionally does not write ALPHA. This keeps the material in the opaque
+  pipeline so depth testing works correctly. Writing ALPHA caused internal
+  outlines to behave like x-ray in some angles.
+
+shaders/screen_mask_outline.gdshader
+
+- Canvas shader used by the full-screen TextureRect overlay.
+- Reads the rendered OutlineViewport texture.
+- Detects the character silhouette from alpha/coverage.
+- Detects internal body-zone borders by comparing neighboring ID colors.
+- Quantizes colors to a fixed 16-color palette before comparison, so small
+  paint/compression artifacts are pulled back to the nearest supported ID.
+
+character/persal/outline_id_palette.pal
+
+- Aseprite-compatible JASC-PAL file with the same 16 colors as the shader.
+- Use this palette when painting ID maps.
+
+
+Current Palette
+---------------
+
+The shader maps pixels to the closest of these 16 colors:
+
+0:  green      0, 255, 0
+1:  blue       0, 0, 255
+2:  red        255, 0, 0
+3:  cyan       0, 255, 255
+4:  yellow     255, 255, 0
+5:  magenta    255, 0, 255
+6:  orange     255, 128, 0
+7:  purple     128, 0, 255
+8:  sky blue   0, 128, 255
+9:  lime       128, 255, 0
+10: pink/red   255, 0, 128
+11: mint       0, 255, 128
+12: gray       128, 128, 128
+13: white      255, 255, 255
+14: deep blue  64, 64, 255
+15: light red  255, 64, 64
+
+
+How The Outline Is Drawn
+------------------------
+
+1. The character is rendered normally by the main camera.
+
+2. Duplicate character meshes are rendered by OutlineCamera3D into
+   OutlineViewport using outline_id_mask.gdshader.
+
+3. The mask output contains:
+
+   - alpha/coverage for the visible character pixels
+   - RGB ID colors from the painted texture
+
+4. The screen outline shader samples the center pixel and four neighbors.
+
+5. Outer silhouette outline:
+
+   If the center pixel is empty but at least one neighbor contains character
+   coverage, draw outline.
+
+6. Internal zone outline:
+
+   If the center pixel and a neighbor are both covered, but their quantized
+   palette IDs differ, draw outline.
+
+7. To avoid double-width internal lines, the shader draws the internal line only
+   on the side with the larger palette ID.
+
+
+Important Texture Rules
+-----------------------
+
+The ID texture should be treated as data, not beauty color.
+
+Recommended import/rendering rules:
+
+- no lossy compression
+- no VRAM block compression
+- no mipmaps
+- nearest sampling
+- flat colors from the supported palette
+
+The shader now quantizes to the nearest palette color, so tiny artifacts are
+less dangerous. Still, cleaner ID textures produce cleaner outlines.
+
+
+Known Limits
+------------
+
+Same-color overlap
+
+- If two body parts use the same ID color, the shader cannot draw a boundary
+  between them. It sees the same ID on both sides.
+- Use different palette colors for parts that should separate when overlapping
+  on screen.
+
+Scene/decor occlusion
+
+- The current stable version does not fully solve "a decor object in front of
+  the character hides the outline".
+- A naive black occluder in the outline mask broke the outer silhouette.
+- A proper solution should compare character depth against scene depth in the
+  screen shader.
+
+Texture artifacts
+
+- A painted texture with many intermediate colors can still cause unexpected
+  zone assignment near edges.
+- The palette quantization helps, but the best workflow is still to paint with
+  flat palette colors.
+
+
+Future Direction
+----------------
+
+The painted ID map can also drive actual character colors.
+
+Instead of using the ID texture only for outlines, a character material could:
+
+1. sample the same ID texture
+2. quantize the color to the same palette ID
+3. look up a user-selected display color for that ID
+4. render the body part with that display color
+
+That would let the editor expose controls like:
+
+- Head color
+- Body color
+- Left arm color
+- Right arm color
+- Legs color
+
+The ID colors would remain hidden technical colors, while the visible colors
+would be editable style colors.
