@@ -18,14 +18,6 @@ const FALLBACK_ANIMATIONS := {
 	&"hiphop": "res://character/animations/hiphop.res",
 }
 
-const CHARACTER_SHADER: Shader = preload("res://shaders/pink_two_tone.gdshader")
-const LIGHT_COLOR := Color(1.0, 0.28, 1.0, 1.0)
-const DARK_COLOR := Color(0.78, 0.08, 0.62, 1.0)
-const TONE_THRESHOLD := 0.61
-const SHADE_LIFT := 0.51
-const SHADOW_STRENGTH := 0.0
-
-
 func _run() -> void:
 	generate_stickman_scene()
 
@@ -58,7 +50,6 @@ func generate_stickman_scene() -> void:
 		return
 
 	_fix_armature(scene_root, armature)
-	_rewire_shader(scene_root)
 	_rewire_animations(scene_root, armature)
 	_save_scene(scene_root)
 
@@ -90,27 +81,6 @@ func _fix_armature(scene_root: Node3D, armature: Node3D) -> void:
 	armature.scale = ARMATURE_SCALE
 	armature.owner = scene_root
 	print("fix_stickman: %s after position=%s rotation=%s scale=%s" % [armature_path, armature.position, armature.rotation_degrees, armature.scale])
-
-
-func _rewire_shader(scene_root: Node3D) -> void:
-	if CHARACTER_SHADER == null:
-		push_warning("fix_stickman: missing character shader.")
-		return
-
-	var character_material := ShaderMaterial.new()
-	character_material.shader = CHARACTER_SHADER
-	character_material.set_shader_parameter(&"light_pink", LIGHT_COLOR)
-	character_material.set_shader_parameter(&"dark_pink", DARK_COLOR)
-	character_material.set_shader_parameter(&"tone_threshold", TONE_THRESHOLD)
-	character_material.set_shader_parameter(&"shade_lift", SHADE_LIFT)
-	character_material.set_shader_parameter(&"shadow_strength", SHADOW_STRENGTH)
-
-	var meshes: Array[MeshInstance3D] = []
-	_collect_mesh_instances(scene_root, meshes)
-	print("fix_stickman: applying character material to %d mesh instances" % meshes.size())
-	for mesh_instance in meshes:
-		mesh_instance.material_override = character_material
-		mesh_instance.owner = scene_root
 
 
 func _rewire_animations(scene_root: Node3D, armature: Node3D) -> void:

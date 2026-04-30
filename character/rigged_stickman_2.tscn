@@ -1,17 +1,7 @@
 [gd_scene format=4 uid="uid://w6f68anq1fbf"]
 
-[ext_resource type="Shader" uid="uid://cmel5s6cfom8d" path="res://shaders/pink_two_tone.gdshader" id="1_ub7if"]
 [ext_resource type="AnimationLibrary" uid="uid://0x3vdiejc518" path="res://character/animations/ANIMATIONSET.res" id="1_v6c62"]
 [ext_resource type="Texture2D" uid="uid://cihlc6ikghtc3" path="res://character/persal/RIGGED_STICKMAN2_1_RIGGED_STICKMAN2_Material.png" id="2_w6pag"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ub7if"]
-render_priority = 0
-shader = ExtResource("1_ub7if")
-shader_parameter/light_pink = Color(1, 0.28, 1, 1)
-shader_parameter/dark_pink = Color(0.78, 0.08, 0.62, 1)
-shader_parameter/tone_threshold = 0.61
-shader_parameter/shade_lift = 0.51
-shader_parameter/shadow_strength = 0.0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_x6pbi"]
 resource_name = "Material.001"
@@ -702,9 +692,8 @@ bones/64/rotation = Quaternion(3.9115548e-08, -2.986053e-08, -8.288771e-08, 1)
 bones/64/scale = Vector3(1, 1.0000001, 1)
 
 [node name="Cylinder" type="MeshInstance3D" parent="Armature/Skeleton3D" unique_id=1517123076]
-material_override = SubResource("ShaderMaterial_ub7if")
 mesh = SubResource("ArrayMesh_c8uop")
 skin = SubResource("Skin_p6d08")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="Armature" unique_id=464420103]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Armature" unique_id=384353432]
 libraries/ = ExtResource("1_v6c62")
