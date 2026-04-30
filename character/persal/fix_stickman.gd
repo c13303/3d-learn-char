@@ -15,7 +15,7 @@ const ANIMATIONS_DIR := "res://character/animations/"
 const ANIMATION_FPS := 30.0
 const TRIM_END_FRAMES := {
 	&"walk": 1,
-	&"run": 5
+	&"run": 1
 }
 
 func generate_stickman_scene() -> void:
