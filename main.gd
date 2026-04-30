@@ -142,15 +142,15 @@ func _update_camera(delta: float) -> void:
 
 
 func _run_fix_stickman() -> void:
-	var fix_script := load("res://character/persal/fix_stickman.gd")
+	var fix_script := load("res://character/persal/import.gd")
 	if fix_script == null:
-		push_warning("rebuild_stickman: could not load fix_stickman.gd")
+		push_warning("rebuild_stickman: could not load import.gd")
 		return
 	var fixer: Object = fix_script.new()
 	if fixer.has_method(&"generate_stickman_scene"):
 		fixer.generate_stickman_scene()
 	else:
-		push_warning("rebuild_stickman: fix_stickman.gd missing generate_stickman_scene()")
+		push_warning("rebuild_stickman: import.gd missing generate_stickman_scene()")
 
 
 func _setup_character() -> void:
