@@ -1,5 +1,4 @@
-@tool
-extends EditorScript
+extends RefCounted
 
 const SOURCE_GLB_PATH := "res://character/persal/RIGGED_STICKMAN2_1.glb"
 const OUTPUT_SCENE_PATH := "res://character/rigged_stickman_2.tscn"
@@ -20,12 +19,8 @@ const FALLBACK_ANIMATIONS := {
 
 const ANIMATION_FPS := 30.0
 const TRIM_END_FRAMES := {
-	&"walk": 10,
+	&"walk": 1,
 }
-
-func _run() -> void:
-	generate_stickman_scene()
-
 
 func generate_stickman_scene() -> void:
 	print("fix_stickman: loading source GLB ", SOURCE_GLB_PATH)
@@ -200,16 +195,22 @@ func _load_or_build_animation_set() -> AnimationLibrary:
 func _refresh_editor_filesystem() -> void:
 	if not Engine.is_editor_hint():
 		return
+	if not Engine.has_singleton("EditorInterface"):
+		return
 
-	var editor_interface := get_editor_interface()
+	var editor_interface := Engine.get_singleton("EditorInterface")
 	if editor_interface == null:
 		return
-
-	var resource_filesystem := editor_interface.get_resource_filesystem()
-	if resource_filesystem == null:
+	if not editor_interface.has_method("get_resource_filesystem"):
 		return
 
-	resource_filesystem.scan()
+	var resource_filesystem: Object = editor_interface.call("get_resource_filesystem")
+	if resource_filesystem == null:
+		return
+	if not resource_filesystem.has_method("scan"):
+		return
+
+	resource_filesystem.call("scan")
 
 
 func _save_scene(scene_root: Node3D) -> void:

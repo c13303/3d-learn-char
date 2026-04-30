@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dyoosf17xphpr"]
 
 [ext_resource type="Script" uid="uid://bevv58obfyvvr" path="res://main.gd" id="1_w8eyr"]
-[ext_resource type="PackedScene" uid="uid://w6f68anq1fbf" path="res://character/rigged_stickman_2.tscn" id="2_h2yge"]
+[ext_resource type="PackedScene" path="res://character/rigged_stickman_2.tscn" id="2_h2yge"]
 [ext_resource type="Shader" uid="uid://0slurlc8q17x" path="res://shaders/screen_mask_outline.gdshader" id="4_screen_outline"]
 
 [sub_resource type="Environment" id="Environment_unshaded"]
@@ -35,6 +35,7 @@ albedo_color = Color(0.43420684, 0.34597963, 0.41095778, 1)
 
 [node name="Main" type="Node3D" unique_id=2120182466]
 script = ExtResource("1_w8eyr")
+rebuild_stickman = true
 character_scene = ExtResource("2_h2yge")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=282526304]

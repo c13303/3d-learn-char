@@ -1,5 +1,6 @@
 extends Node3D
 
+@export var rebuild_stickman := false
 @export var move_speed := 3.0
 @export var turn_speed := 10.0
 @export var animation_blend_time := 0.2
@@ -39,6 +40,8 @@ var one_shot_animation: StringName = &""
 
 
 func _ready() -> void:
+	if rebuild_stickman:
+		_run_fix_stickman()
 	_setup_character()
 	if not _has_character_controller_target():
 		set_process(false)
@@ -124,6 +127,18 @@ func _update_camera(delta: float) -> void:
 	var target_position := character.global_position + camera_offset
 	var weight := 1.0 - exp(-camera_follow_speed * delta)
 	main_camera.global_position = main_camera.global_position.lerp(target_position, weight)
+
+
+func _run_fix_stickman() -> void:
+	var fix_script := load("res://character/persal/fix_stickman.gd")
+	if fix_script == null:
+		push_warning("rebuild_stickman: could not load fix_stickman.gd")
+		return
+	var fixer: Object = fix_script.new()
+	if fixer.has_method(&"generate_stickman_scene"):
+		fixer.generate_stickman_scene()
+	else:
+		push_warning("rebuild_stickman: fix_stickman.gd missing generate_stickman_scene()")
 
 
 func _setup_character() -> void:
