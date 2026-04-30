@@ -5,21 +5,17 @@ const OUTPUT_SCENE_PATH := "res://character/rigged_stickman_2.tscn"
 const ROOT_NODE_NAME := "root_stickman"
 const ARMATURE_NAME := "Armature"
 const ANIMATION_PLAYER_NAME := "AnimationPlayer"
-const ANIMATION_SET_PATH := "res://character/animations/ANIMATIONSET.res"
 
 const ARMATURE_POSITION := Vector3(0.0, 5.27, 0.0)
 const ARMATURE_ROTATION_DEGREES := Vector3(6.0, 0.0, 0.0)
 const ARMATURE_SCALE := Vector3(0.02, 0.02, 0.02)
 
-const FALLBACK_ANIMATIONS := {
-	&"idle2": "res://character/animations/idle2.res",
-	&"walk": "res://character/animations/walking.res",
-	&"hiphop": "res://character/animations/hiphop.res",
-}
+const ANIMATIONS_DIR := "res://character/animations/"
 
 const ANIMATION_FPS := 30.0
 const TRIM_END_FRAMES := {
 	&"walk": 1,
+	&"run": 5
 }
 
 func generate_stickman_scene() -> void:
@@ -146,50 +142,45 @@ func _find_or_create_animation_player(scene_root: Node3D, armature: Node3D) -> A
 
 
 func _load_or_build_animation_set() -> AnimationLibrary:
-	if ResourceLoader.exists(ANIMATION_SET_PATH):
-		print("fix_stickman: loading animation set ", ANIMATION_SET_PATH)
-		var existing_library := load(ANIMATION_SET_PATH) as AnimationLibrary
-		if existing_library != null:
-			print("fix_stickman: loaded animation set with %d animations" % existing_library.get_animation_list().size())
-			return existing_library
-		push_warning("fix_stickman: '%s' exists but is not an AnimationLibrary." % ANIMATION_SET_PATH)
-
-	print("fix_stickman: animation set missing or invalid, refreshing editor filesystem")
 	_refresh_editor_filesystem()
-	if ResourceLoader.exists(ANIMATION_SET_PATH):
-		print("fix_stickman: loading animation set after refresh ", ANIMATION_SET_PATH)
-		var imported_library := load(ANIMATION_SET_PATH) as AnimationLibrary
-		if imported_library != null:
-			print("fix_stickman: loaded animation set with %d animations" % imported_library.get_animation_list().size())
-			return imported_library
 
-	print("fix_stickman: building animation set from fallback animations")
+	print("fix_stickman: scanning ", ANIMATIONS_DIR, " for animations")
 	var animation_library := AnimationLibrary.new()
-	for animation_name: StringName in FALLBACK_ANIMATIONS:
-		var animation_path: String = FALLBACK_ANIMATIONS[animation_name]
-		if not ResourceLoader.exists(animation_path):
-			push_warning("fix_stickman: missing animation '%s' at '%s'." % [animation_name, animation_path])
-			continue
-
+	var animation_paths := _scan_animation_paths(ANIMATIONS_DIR)
+	for animation_path: String in animation_paths:
+		var animation_name := StringName(animation_path.get_file().get_basename())
 		var animation := load(animation_path) as Animation
 		if animation == null:
-			push_warning("fix_stickman: failed to load animation '%s' from '%s'." % [animation_name, animation_path])
+			push_warning("fix_stickman: failed to load animation at '%s'." % animation_path)
 			continue
-
 		animation_library.add_animation(animation_name, animation)
 		print("fix_stickman: imported animation '%s' from '%s'" % [animation_name, animation_path])
 
 	if animation_library.get_animation_list().is_empty():
-		push_error("fix_stickman: fallback animation set is empty.")
+		push_error("fix_stickman: no animations found in '%s'." % ANIMATIONS_DIR)
 		return null
 
-	var save_error := ResourceSaver.save(animation_library, ANIMATION_SET_PATH)
-	if save_error != OK:
-		push_warning("fix_stickman: failed to save '%s' (error %d)." % [ANIMATION_SET_PATH, save_error])
-	else:
-		print("fix_stickman: saved generated animation set ", ANIMATION_SET_PATH)
-
 	return animation_library
+
+
+func _scan_animation_paths(dir_path: String) -> Array[String]:
+	var paths: Array[String] = []
+	var dir := DirAccess.open(dir_path)
+	if dir == null:
+		push_error("fix_stickman: could not open '%s'." % dir_path)
+		return paths
+
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.get_extension() == "res":
+			var basename := file_name.get_basename()
+			if basename != "ANIMATIONSET":
+				paths.append(dir_path.path_join(file_name))
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	paths.sort()
+	return paths
 
 
 func _refresh_editor_filesystem() -> void:

@@ -2,6 +2,7 @@ extends Node3D
 
 @export var rebuild_stickman := false
 @export var move_speed := 3.0
+@export var run_speed := 6.0
 @export var turn_speed := 10.0
 @export var animation_blend_time := 0.2
 @export var camera_follow_speed := 6.0
@@ -54,7 +55,7 @@ func _ready() -> void:
 	_sync_outline_camera()
 	_build_tweak_ui()
 	animation_player.animation_finished.connect(_on_animation_finished)
-	_play_animation("idle2")
+	_play_animation("idle")
 
 
 func _process(_delta: float) -> void:
@@ -77,15 +78,18 @@ func _physics_process(delta: float) -> void:
 		input_vector = input_vector.normalized()
 
 		var move_direction := Vector3(input_vector.x, 0.0, -input_vector.y)
+		var is_running := Input.is_key_pressed(KEY_SHIFT)
+		var current_speed := run_speed if is_running else move_speed
+		var locomotion_anim: StringName = &"run" if is_running else &"walk"
 
-		character.global_position += move_direction * move_speed * delta
+		character.global_position += move_direction * current_speed * delta
 		_face_direction(move_direction, delta)
 		if one_shot_animation != &"":
-			_stop_one_shot_and_play(&"walk")
+			_stop_one_shot_and_play(locomotion_anim)
 		else:
-			_play_animation("walk")
+			_play_animation(locomotion_anim)
 	elif one_shot_animation == &"":
-		_play_animation("idle2")
+		_play_animation("idle")
 
 	_update_camera(delta)
 
@@ -99,7 +103,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.keycode == KEY_H:
 		_trigger_one_shot(&"hiphop")
 	elif event.keycode == KEY_I:
-		_trigger_one_shot(&"idle2")
+		_trigger_one_shot(&"idle")
 
 
 func _trigger_one_shot(animation_name: StringName) -> void:
@@ -367,6 +371,7 @@ func _build_tweak_ui() -> void:
 
 	_add_section(list, "Movement")
 	_add_tweak_slider(list, "movement", "move_speed", "speed", 0.0, 20.0, 0.1)
+	_add_tweak_slider(list, "movement", "run_speed", "run speed", 0.0, 40.0, 0.1)
 
 	_add_section(list, "Floor")
 	_add_tweak_color_picker(list, "floor", "base_color", "color")
@@ -445,6 +450,7 @@ func _tweak_parameters_for_section(section: String) -> Array[StringName]:
 		"movement":
 			return [
 				&"move_speed",
+				&"run_speed",
 			]
 
 	return []
