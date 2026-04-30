@@ -695,5 +695,5 @@ bones/64/scale = Vector3(1, 1.0000001, 1)
 mesh = SubResource("ArrayMesh_c8uop")
 skin = SubResource("Skin_p6d08")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="Armature" unique_id=384353432]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Armature" unique_id=1192906778]
 libraries/ = ExtResource("1_v6c62")

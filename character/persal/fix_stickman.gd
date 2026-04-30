@@ -18,6 +18,11 @@ const FALLBACK_ANIMATIONS := {
 	&"hiphop": "res://character/animations/hiphop.res",
 }
 
+const ANIMATION_FPS := 30.0
+const TRIM_END_FRAMES := {
+	&"walk": 10,
+}
+
 func _run() -> void:
 	generate_stickman_scene()
 
@@ -94,6 +99,8 @@ func _rewire_animations(scene_root: Node3D, armature: Node3D) -> void:
 		print("fix_stickman: removing animation library '", library_name, "'")
 		animation_player.remove_animation_library(library_name)
 
+	_apply_trim_end_frames(animation_library)
+
 	animation_player.root_node = NodePath("..")
 	animation_player.add_animation_library(&"", animation_library)
 	animation_player.owner = scene_root
@@ -104,6 +111,29 @@ func _rewire_animations(scene_root: Node3D, armature: Node3D) -> void:
 	)
 	for animation_name: StringName in animation_library.get_animation_list():
 		print("fix_stickman: animation available: ", animation_name)
+
+
+func _apply_trim_end_frames(animation_library: AnimationLibrary) -> void:
+	for animation_name: StringName in TRIM_END_FRAMES:
+		var frames_to_skip: int = TRIM_END_FRAMES[animation_name]
+		if frames_to_skip <= 0:
+			continue
+		if not animation_library.has_animation(animation_name):
+			push_warning("fix_stickman: cannot trim '%s', animation not in library." % animation_name)
+			continue
+
+		var animation := animation_library.get_animation(animation_name)
+		var trimmed := animation.duplicate() as Animation
+		var new_length := trimmed.length - (float(frames_to_skip) / ANIMATION_FPS)
+		if new_length <= 0.0:
+			push_warning("fix_stickman: trim of %d frames would zero '%s' (length %f)." % [frames_to_skip, animation_name, trimmed.length])
+			continue
+
+		trimmed.length = new_length
+		trimmed.loop_mode = Animation.LOOP_LINEAR
+		animation_library.remove_animation(animation_name)
+		animation_library.add_animation(animation_name, trimmed)
+		print("fix_stickman: trimmed '%s' by %d frame(s) -> length %f" % [animation_name, frames_to_skip, new_length])
 
 
 func _find_or_create_animation_player(scene_root: Node3D, armature: Node3D) -> AnimationPlayer:
