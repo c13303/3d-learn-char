@@ -26,7 +26,6 @@ const CHARACTER_NODE_NAME := "root_stickman"
 const OUTLINE_ID_VISUAL_LAYER := 2
 const TWEAK_SETTINGS_PATH := "res://shader_tweaks.cfg"
 const OUTLINE_ID_SHADER := preload("res://shaders/outline_id_mask.gdshader")
-
 var character: Node3D
 var animation_player: AnimationPlayer
 var character_mesh: MeshInstance3D
@@ -81,7 +80,9 @@ func _physics_process(delta: float) -> void:
 
 		character.global_position += move_direction * move_speed * delta
 		_face_direction(move_direction, delta)
-		if one_shot_animation == &"":
+		if one_shot_animation != &"":
+			_stop_one_shot_and_play(&"walk")
+		else:
 			_play_animation("walk")
 	elif one_shot_animation == &"":
 		_play_animation("idle2")
@@ -106,6 +107,11 @@ func _trigger_one_shot(animation_name: StringName) -> void:
 		return
 	one_shot_animation = animation_name
 	animation_player.play(animation_name, animation_blend_time)
+
+
+func _stop_one_shot_and_play(animation_name: StringName) -> void:
+	one_shot_animation = &""
+	_play_animation(animation_name)
 
 
 func _on_animation_finished(animation_name: StringName) -> void:
