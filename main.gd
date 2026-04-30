@@ -104,6 +104,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_trigger_one_shot(&"hiphop")
 	elif event.keycode == KEY_I:
 		_trigger_one_shot(&"idle")
+	elif event.keycode == KEY_J:
+		_trigger_one_shot(&"break")
 
 
 func _trigger_one_shot(animation_name: StringName) -> void:
