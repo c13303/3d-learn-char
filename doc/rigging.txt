@@ -1,4 +1,4 @@
-- STICKMAN2.fbx = le model pour mixamo
+- STICKMAN2.fbx = le model pour mixamo ! ne marche pas une fois édité dans blender...
 
 - Dans Godot, l'ouvrir comme new inherited scene, et immédiatement le save again en .tscn (ou .scn binaire)
 - Ouvrir cette nouvelle scene > right click node parent, clear dependance (ou genre)

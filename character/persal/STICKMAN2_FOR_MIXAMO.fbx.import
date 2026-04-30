@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bapbu318ffr4i"
-path="res://.godot/imported/RIGGED_STICKMAN2.glb-43edf412609e79848e90dd294a7a2a8e.scn"
+uid="uid://bdi1smuudxg0b"
+path="res://.godot/imported/STICKMAN2_FOR_MIXAMO.fbx-e0be8e2cfe8e01be2703ece56785e7b9.scn"
 
 [deps]
 
-source_file="res://character/persal/RIGGED_STICKMAN2.glb"
-dest_files=["res://.godot/imported/RIGGED_STICKMAN2.glb-43edf412609e79848e90dd294a7a2a8e.scn"]
+source_file="res://character/persal/STICKMAN2_FOR_MIXAMO.fbx"
+dest_files=["res://.godot/imported/STICKMAN2_FOR_MIXAMO.fbx-e0be8e2cfe8e01be2703ece56785e7b9.scn"]
 
 [params]
 
@@ -30,7 +30,7 @@ meshes/force_disable_compression=false
 skins/use_named_skins=true
 animation/import=true
 animation/fps=30
-animation/trimming=false
+animation/trimming=true
 animation/remove_immutable_tracks=true
 animation/import_rest_as_RESET=false
 import_script/path=""
@@ -38,5 +38,7 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
-gltf/naming_version=2
-gltf/embedded_image_handling=1
+fbx/importer=0
+fbx/allow_geometry_helper_nodes=false
+fbx/embedded_image_handling=1
+fbx/naming_version=2
