@@ -21,7 +21,7 @@ extends Node3D
 @onready var decor_mesh: MeshInstance3D = $decor/MeshInstance3D
 @onready var outline_overlay: TextureRect = $ScreenOutline/OutlineOverlay
 
-const CHARACTER_NODE_NAME := "stickman"
+const CHARACTER_NODE_NAME := "root_stickman"
 const OUTLINE_ID_VISUAL_LAYER := 2
 const TWEAK_SETTINGS_PATH := "res://shader_tweaks.cfg"
 const OUTLINE_ID_SHADER := preload("res://shaders/outline_id_mask.gdshader")
@@ -35,6 +35,7 @@ var tweak_ui: CanvasLayer
 var camera_offset := Vector3.ZERO
 var tweak_materials: Dictionary = {}
 var tweak_control_refreshers: Array[Callable] = []
+var one_shot_animation: StringName = &""
 
 
 func _ready() -> void:
@@ -50,11 +51,11 @@ func _ready() -> void:
 	outline_viewport.world_3d = get_viewport().world_3d
 	_sync_outline_camera()
 	_build_tweak_ui()
-	_play_animation("idle")
+	animation_player.animation_finished.connect(_on_animation_finished)
+	_play_animation("idle2")
 
 
 func _process(_delta: float) -> void:
-	_update_camera(_delta)
 	_sync_outline_camera()
 
 
@@ -77,14 +78,36 @@ func _physics_process(delta: float) -> void:
 
 		character.global_position += move_direction * move_speed * delta
 		_face_direction(move_direction, delta)
-		_play_animation("walk")
-	else:
-		_play_animation("idle")
+		if one_shot_animation == &"":
+			_play_animation("walk")
+	elif one_shot_animation == &"":
+		_play_animation("idle2")
+
+	_update_camera(delta)
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if tweak_ui != null and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_TAB:
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+
+	if tweak_ui != null and event.keycode == KEY_TAB:
 		tweak_ui.visible = not tweak_ui.visible
+	elif event.keycode == KEY_H:
+		_trigger_one_shot(&"hiphop")
+	elif event.keycode == KEY_I:
+		_trigger_one_shot(&"idle2")
+
+
+func _trigger_one_shot(animation_name: StringName) -> void:
+	if animation_player == null or not animation_player.has_animation(animation_name):
+		return
+	one_shot_animation = animation_name
+	animation_player.play(animation_name, animation_blend_time)
+
+
+func _on_animation_finished(animation_name: StringName) -> void:
+	if animation_name == one_shot_animation:
+		one_shot_animation = &""
 
 
 func _face_direction(direction: Vector3, delta: float) -> void:
@@ -154,6 +177,18 @@ func _find_first_mesh_instance(root: Node) -> MeshInstance3D:
 func _apply_character_shader() -> void:
 	if character_shader == null:
 		return
+
+	if character != null and character.has_method(&"rewire_shader"):
+		character_material = character.rewire_shader(
+			character_shader,
+			character_light_color,
+			character_dark_color,
+			character_tone_threshold,
+			character_shade_lift,
+			character_shadow_strength
+		)
+		if character_material != null:
+			return
 
 	character_material = ShaderMaterial.new()
 	character_material.shader = character_shader
@@ -274,6 +309,7 @@ func _build_tweak_ui() -> void:
 		"floor": floor_material,
 		"decor": decor_material,
 		"outline": outline_material,
+		"movement": self,
 	}
 	if character_material != null:
 		tweak_materials["character"] = character_material
@@ -307,6 +343,9 @@ func _build_tweak_ui() -> void:
 		_add_tweak_slider(list, "character", "tone_threshold", "tone", 0.0, 1.0, 0.01)
 		_add_tweak_slider(list, "character", "shade_lift", "lift", 0.0, 1.0, 0.01)
 		_add_tweak_slider(list, "character", "shadow_strength", "shadow", 0.0, 1.0, 0.01)
+
+	_add_section(list, "Movement")
+	_add_tweak_slider(list, "movement", "move_speed", "speed", 0.0, 20.0, 0.1)
 
 	_add_section(list, "Floor")
 	_add_tweak_color_picker(list, "floor", "base_color", "color")
@@ -382,6 +421,10 @@ func _tweak_parameters_for_section(section: String) -> Array[StringName]:
 				&"outline_width_px",
 				&"coverage_threshold",
 			]
+		"movement":
+			return [
+				&"move_speed",
+			]
 
 	return []
 
@@ -396,6 +439,8 @@ func _get_tweak_value(section: String, parameter: StringName) -> Variant:
 
 			if parameter == &"base_color":
 				return surface_material.albedo_color
+		"movement":
+			return get(String(parameter))
 
 	return null
 
@@ -412,6 +457,8 @@ func _set_tweak_value(section: String, parameter: StringName, value: Variant) ->
 
 			if parameter == &"base_color":
 				surface_material.albedo_color = value
+		"movement":
+			set(String(parameter), value)
 
 
 func _add_title(parent: VBoxContainer, text: String) -> void:
